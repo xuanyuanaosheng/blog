@@ -3,6 +3,7 @@
 ### 参考文档
 - https://blog.51cto.com/anyisalin/1748342
 - https://blog.51cto.com/woyaoxuelinux/1973718
+- https://www.computernetworkingnotes.com/rhce-study-guide/learn-how-to-configure-lvm-in-linux-step-by-step.html
 
 1. 默认测试环境测试机的状态：
 
