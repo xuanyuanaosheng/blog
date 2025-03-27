@@ -1,104 +1,55 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<mxfile host="app.diagrams.net" modified="2024-03-27" agent="Mozilla/5.0" version="24.1.0" etag="cdp-hadoop-architecture" type="device">
-  <diagram id="CDP-Hadoop-Architecture" name="CDP Hadoop Architecture">
-    <mxGraphModel dx="1434" dy="775" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
-      <root>
-        <mxCell id="0"/>
-        <mxCell id="1" parent="0"/>
+flowchart TB
+    subgraph "Cloudera Data Platform (CDP)"
+        direction TB
         
-        <!-- Cloudera Data Platform Container -->
-        <mxCell id="CDP-Container" value="Cloudera Data Platform (CDP)" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
-          <mxGeometry x="40" y="40" width="770" height="600" as="geometry"/>
-        </mxCell>
+        subgraph "Hadoop Cluster"
+            direction TB
+            NameNode["NameNode\n(Metadata Management)"]
+            ResourceManager["YARN ResourceManager\n(Resource Allocation)"]
+            
+            subgraph "DataNodes"
+                DN1["DataNode 1"]
+                DN2["DataNode 2"]
+                DN3["DataNode 3"]
+                DNn["... More DataNodes"]
+            end
+        end
         
-        <!-- Hadoop Cluster -->
-        <mxCell id="Hadoop-Cluster" value="Hadoop Cluster" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="CDP-Container">
-          <mxGeometry x="20" y="60" width="730" height="200" as="geometry"/>
-        </mxCell>
+        subgraph "Storage Layer"
+            HDFS["Hadoop Distributed File System (HDFS)"]
+            Object["Object Storage"]
+        end
         
-        <!-- NameNode -->
-        <mxCell id="NameNode" value="NameNode&#10;(Metadata Management)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="Hadoop-Cluster">
-          <mxGeometry x="20" y="60" width="180" height="60" as="geometry"/>
-        </mxCell>
+        subgraph "Processing Frameworks"
+            MapReduce["MapReduce"]
+            Spark["Apache Spark"]
+            Hive["Hive"]
+            Impala["Impala"]
+        end
         
-        <!-- ResourceManager -->
-        <mxCell id="ResourceManager" value="YARN ResourceManager&#10;(Resource Allocation)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="Hadoop-Cluster">
-          <mxGeometry x="220" y="60" width="180" height="60" as="geometry"/>
-        </mxCell>
+        subgraph "Management & Security"
+            CM["Cloudera Manager"]
+            Ranger["Apache Ranger\n(Security)"]
+            Atlas["Apache Atlas\n(Governance)"]
+        end
         
-        <!-- DataNodes Container -->
-        <mxCell id="DataNodes" value="DataNodes" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="Hadoop-Cluster">
-          <mxGeometry x="420" y="60" width="290" height="130" as="geometry"/>
-        </mxCell>
-        
-        <!-- Individual DataNodes -->
-        <mxCell id="DataNode1" value="DataNode 1" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="DataNodes">
-          <mxGeometry x="20" y="50" width="80" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="DataNode2" value="DataNode 2" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="DataNodes">
-          <mxGeometry x="110" y="50" width="80" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="DataNode3" value="DataNode 3" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="DataNodes">
-          <mxGeometry x="200" y="50" width="80" height="40" as="geometry"/>
-        </mxCell>
-        
-        <!-- Storage Layer -->
-        <mxCell id="Storage-Layer" value="Storage Layer" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="CDP-Container">
-          <mxGeometry x="20" y="280" width="340" height="110" as="geometry"/>
-        </mxCell>
-        
-        <mxCell id="HDFS" value="Hadoop Distributed File System (HDFS)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="Storage-Layer">
-          <mxGeometry x="20" y="50" width="140" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="Object-Storage" value="Object Storage" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="Storage-Layer">
-          <mxGeometry x="180" y="50" width="140" height="40" as="geometry"/>
-        </mxCell>
-        
-        <!-- Processing Frameworks -->
-        <mxCell id="Processing-Frameworks" value="Processing Frameworks" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="CDP-Container">
-          <mxGeometry x="380" y="280" width="370" height="110" as="geometry"/>
-        </mxCell>
-        
-        <mxCell id="MapReduce" value="MapReduce" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="Processing-Frameworks">
-          <mxGeometry x="20" y="50" width="80" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="Spark" value="Apache Spark" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="Processing-Frameworks">
-          <mxGeometry x="110" y="50" width="80" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="Hive" value="Hive" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="Processing-Frameworks">
-          <mxGeometry x="200" y="50" width="80" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="Impala" value="Impala" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="Processing-Frameworks">
-          <mxGeometry x="290" y="50" width="80" height="40" as="geometry"/>
-        </mxCell>
-        
-        <!-- Management & Security -->
-        <mxCell id="Management-Security" value="Management &amp; Security" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="CDP-Container">
-          <mxGeometry x="20" y="410" width="340" height="110" as="geometry"/>
-        </mxCell>
-        
-        <mxCell id="Cloudera-Manager" value="Cloudera Manager" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="Management-Security">
-          <mxGeometry x="20" y="50" width="100" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="Ranger" value="Apache Ranger&#10;(Security)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="Management-Security">
-          <mxGeometry x="140" y="50" width="120" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="Atlas" value="Apache Atlas&#10;(Governance)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="Management-Security">
-          <mxGeometry x="280" y="50" width="120" height="40" as="geometry"/>
-        </mxCell>
-        
-        <!-- Compute Services -->
-        <mxCell id="Compute-Services" value="Compute Services" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" vertex="1" parent="CDP-Container">
-          <mxGeometry x="380" y="410" width="370" height="110" as="geometry"/>
-        </mxCell>
-        
-        <mxCell id="Kudu" value="Apache Kudu" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="Compute-Services">
-          <mxGeometry x="20" y="50" width="120" height="40" as="geometry"/>
-        </mxCell>
-        <mxCell id="HBase" value="Apache HBase" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="Compute-Services">
-          <mxGeometry x="160" y="50" width="120" height="40" as="geometry"/>
-        </mxCell>
-      </root>
-    </mxGraphModel>
-  </diagram>
-</mxfile>]]>
+        subgraph "Compute Services"
+            Kudu["Apache Kudu"]
+            HBase["Apache HBase"]
+        end
+    end
+    
+    Client["Client Applications"] --> NameNode
+    Client --> ResourceManager
+    
+    NameNode --> DN1
+    NameNode --> DN2
+    NameNode --> DN3
+    
+    ResourceManager --> Processing
+    
+    Processing --> Storage
+    
+    CM --> Hadoop
+    Ranger --> Hadoop
+    Atlas --> Hadoop
