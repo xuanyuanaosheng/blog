@@ -1,55 +1,36 @@
-flowchart TB
-    subgraph "Cloudera Data Platform (CDP)"
-        direction TB
-        
-        subgraph "Hadoop Cluster"
-            direction TB
-            NameNode["NameNode\n(Metadata Management)"]
-            ResourceManager["YARN ResourceManager\n(Resource Allocation)"]
-            
-            subgraph "DataNodes"
-                DN1["DataNode 1"]
-                DN2["DataNode 2"]
-                DN3["DataNode 3"]
-                DNn["... More DataNodes"]
-            end
-        end
-        
-        subgraph "Storage Layer"
-            HDFS["Hadoop Distributed File System (HDFS)"]
-            Object["Object Storage"]
-        end
-        
-        subgraph "Processing Frameworks"
-            MapReduce["MapReduce"]
-            Spark["Apache Spark"]
-            Hive["Hive"]
-            Impala["Impala"]
-        end
-        
-        subgraph "Management & Security"
-            CM["Cloudera Manager"]
-            Ranger["Apache Ranger\n(Security)"]
-            Atlas["Apache Atlas\n(Governance)"]
-        end
-        
-        subgraph "Compute Services"
-            Kudu["Apache Kudu"]
-            HBase["Apache HBase"]
-        end
-    end
+graph TD
+    A[Data Sources] --> |Raw Data| B(Apache Kafka)
+    B --> |Streaming Data| C{Apache NiFi}
     
-    Client["Client Applications"] --> NameNode
-    Client --> ResourceManager
+    C --> |Transformed Data| D[HDFS Storage]
+    C --> |Structured Data| E[Apache Kudu]
+    C --> |NoSQL Data| F[Apache HBase]
     
-    NameNode --> DN1
-    NameNode --> DN2
-    NameNode --> DN3
+    D --> G[Apache Spark]
+    E --> G
+    F --> G
     
-    ResourceManager --> Processing
+    G --> H[Apache Hive]
+    G --> I[Apache Impala]
     
-    Processing --> Storage
+    H --> J[Cloudera ML Platform]
+    I --> J
     
-    CM --> Hadoop
-    Ranger --> Hadoop
-    Atlas --> Hadoop
+    K[Metadata & Lineage] --> |Tracks| A
+    K --> |Tracks| D
+    K --> |Tracks| G
+    
+    L[Access Control] --> |Secures| A
+    L --> |Secures| D
+    L --> |Secures| G
+    L --> |Secures| J
+    
+    M[Cloudera Manager] --> |Manages| D
+    M --> |Manages| G
+    M --> |Manages| J
+    
+    N[Workload Manager] --> |Orchestrates| G
+    N --> |Orchestrates| H
+    N --> |Orchestrates| I
+    
+    linkStyle default stroke:#333,stroke-width:2px
