@@ -1,41 +1,89 @@
 #!/bin/bash
+#
+# chkconfig:    2345 90 10
+# description:  A generic service startup script for CentOS 6
+#
+# Usage:        /etc/init.d/<script_name> {start|stop|status|restart}
 
-# 检查参数
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <process_name>"
-    echo "Example: $0 nginx"
-    exit 1
-fi
+# 服务名称（必须修改）
+SERVICE_NAME="your_service_name"
+# 进程名（用于 pgrep 检查）
+PROCESS_NAME="your_process_name"
+# 启动命令（必须修改）
+START_CMD="/path/to/your/command --args"
+# 停止命令（可选，默认 killall）
+STOP_CMD="killall $PROCESS_NAME"
 
-PROCESS_NAME=$1
-# 这里预设启动命令（根据实际需求修改）
-START_COMMAND="systemctl start $PROCESS_NAME"  # 示例：系统服务
-# 或者 START_COMMAND="/path/to/binary"       # 示例：直接启动二进制文件
-
-# 检查进程是否存在
-check_process() {
+# 检查进程是否运行
+is_running() {
     if pgrep -x "$PROCESS_NAME" >/dev/null; then
-        echo "$PROCESS_NAME, RUNNING"
         return 0
     else
-        echo "$PROCESS_NAME, STOP"
         return 1
     fi
 }
 
-# 主逻辑
-if ! check_process; then
-    echo "Starting $PROCESS_NAME..."
-    eval "$START_COMMAND"
-    
-    # 验证是否启动成功
+# 启动服务
+start() {
+    if is_running; then
+        echo "$SERVICE_NAME is already running"
+        return 0
+    fi
+    echo -n "Starting $SERVICE_NAME: "
+    $START_CMD &> /dev/null &
     sleep 2
-    if check_process; then
-        echo "$PROCESS_NAME started successfully"
+    if is_running; then
+        echo "OK"
     else
-        echo "Failed to start $PROCESS_NAME"
+        echo "FAILED"
         exit 1
     fi
-fi
+}
+
+# 停止服务
+stop() {
+    if ! is_running; then
+        echo "$SERVICE_NAME is not running"
+        return 0
+    fi
+    echo -n "Stopping $SERVICE_NAME: "
+    $STOP_CMD &> /dev/null
+    sleep 2
+    if is_running; then
+        echo "FAILED (try manually)"
+        exit 1
+    else
+        echo "OK"
+    fi
+}
+
+# 服务状态
+status() {
+    if is_running; then
+        echo "$SERVICE_NAME is running"
+    else
+        echo "$SERVICE_NAME is stopped"
+    fi
+}
+
+# 主逻辑
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    status)
+        status
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|status|restart}"
+        exit 1
+esac
 
 exit 0
