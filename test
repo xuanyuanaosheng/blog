@@ -1,0 +1,98 @@
+是的，针对 老年代（Old Generation） 的内存使用情况，可以通过 jmx_exporter 提供的指标（如 jvm_memory_bytes_used 和 jvm_memory_pool_bytes_used 等）配置 Prometheus 警报规则，提前发现可能的 Full GC 风险或内存泄漏问题。
+
+下面是一些针对 老年代（Old Gen） 的报警规则建议：
+
+
+---
+
+1. 老年代内存使用率过高
+
+- alert: HighOldGenMemoryUsage
+  expr: |
+    (jvm_memory_pool_bytes_used{pool=~"Old.*"} / jvm_memory_pool_bytes_max{pool=~"Old.*"}) > 0.8
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    summary: "Old Gen memory usage is above 80%"
+    description: "The Old Generation memory pool is using more than 80% of its maximum capacity. Current value: {{ $value | printf \"%.2f\" }}"
+
+> pool=~"Old.*" 会匹配 "Old Gen"、"Tenured Gen" 等，具体名称可通过 curl <jmx-exporter-url>/metrics 查看。
+
+
+
+
+---
+
+2. 老年代内存使用率接近100%
+
+- alert: CriticalOldGenMemoryUsage
+  expr: |
+    (jvm_memory_pool_bytes_used{pool=~"Old.*"} / jvm_memory_pool_bytes_max{pool=~"Old.*"}) > 0.95
+  for: 2m
+  labels:
+    severity: critical
+  annotations:
+    summary: "Old Gen memory usage critical (>95%)"
+    description: "Potential Full GC imminent. Old Gen usage at {{ $value | printf \"%.2f\" }}"
+
+
+---
+
+3. 老年代使用量持续增长（可能存在内存泄漏）
+
+- alert: OldGenMemoryUsageGrowing
+  expr: |
+    (rate(jvm_memory_pool_bytes_used{pool=~"Old.*"}[10m])) > 1e6
+  for: 10m
+  labels:
+    severity: warning
+  annotations:
+    summary: "Old Gen memory usage increasing"
+    description: "Old Generation memory usage is increasing at a rate > 1MB/s. Might indicate memory leak."
+
+
+---
+
+4. Full GC 后老年代未显著释放
+
+此种检测需要将 jvm_gc_collection_seconds_count 和 Old Gen 结合分析，可做如下思路：
+
+- alert: FullGCButOldGenStillHigh
+  expr: |
+    increase(jvm_gc_collection_seconds_count{gc=~".*Old.*"}[5m]) > 0 and
+    (jvm_memory_pool_bytes_used{pool=~"Old.*"} / jvm_memory_pool_bytes_max{pool=~"Old.*"}) > 0.9
+  for: 5m
+  labels:
+    severity: critical
+  annotations:
+    summary: "Full GC did not release Old Gen memory"
+    description: "Full GC occurred but Old Generation usage is still >90%"
+
+
+---
+
+🔍 如何确定你的 JVM 中老年代的 pool 名称？
+
+执行如下命令查看指标：
+
+curl http://<jmx_exporter_host>:<port>/metrics | grep memory_pool_bytes_max
+
+你可能会看到如下内容：
+
+jvm_memory_pool_bytes_max{pool="G1 Old Gen", ...} 4.294967e+09
+
+根据你所使用的垃圾收集器（如 G1、CMS、Parallel GC），老年代的名称会不同，比如：
+
+G1 Old Gen
+
+Tenured Gen
+
+PS Old Gen
+
+
+
+---
+
+如你能提供 GC 类型或 JDK 版本，我可帮你定制更合适的规则。是否需要对应你环境的进一步优化建议？
+
