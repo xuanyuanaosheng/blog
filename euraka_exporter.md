@@ -19,6 +19,7 @@
 ---
 
 ✅ 更新版脚本：eureka_metrics.sh
+'''
 
 #!/bin/bash
 
@@ -72,10 +73,11 @@ echo "$response" | jq -r '
   "eureka_application_down{app=\"" + $app + "\"} " + ((.total - .up)|tostring)
 ' >> "$OUTPUT_FILE"
 
-
+'''
 ---
 
 📌 输出示例
+'''
 
 # HELP eureka_instance_up Status of individual Eureka instances (1=UP, 0=not UP)
 # TYPE eureka_instance_up gauge
@@ -94,7 +96,7 @@ eureka_application_up{app="MY-SERVICE"} 1
 # TYPE eureka_application_down gauge
 eureka_application_down{app="MY-SERVICE"} 1
 
-
+'''
 ---
 
 ✅ 监控建议
@@ -123,6 +125,4 @@ Prometheus 告警规则建议
 
 
 ---
-
-需要我补充 Grafana 的图表变量或面板配置建议吗？或者把脚本转成 systemd 服务管理？
 
