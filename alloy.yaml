@@ -1,0 +1,235 @@
+// Alloy配置文件用于采集Java微服务日志并发送到Loki
+// 配置文件名: config.alloy
+
+// 发现多个微服务目录下的日志文件
+discovery.file "java_microservices" {
+  path_targets = [{
+    __path__ = "/app/*/log/*.log",
+  }]
+}
+
+// 从路径中提取微服务名称
+discovery.relabel "add_microservice_label" {
+  targets = discovery.file.java_microservices.targets
+  
+  rule {
+    source_labels = ["__path__"]
+    target_label  = "microservice"
+    regex         = "/app/([^/]+)/log/.*"
+    replacement   = "$1"
+  }
+  
+  rule {
+    source_labels = ["__path__"]
+    target_label  = "log_file"
+    regex         = "/app/[^/]+/log/(.+)$"
+    replacement   = "$1"
+  }
+  
+  rule {
+    source_labels = ["__path__"]
+    target_label  = "job"
+    replacement   = "java-microservices"
+  }
+}
+
+// 配置日志抓取器，处理Java异常的多行日志
+loki.source.file "java_logs" {
+  targets    = discovery.relabel.add_microservice_label.output
+  forward_to = [loki.process.java_multiline.receiver]
+}
+
+// 处理Java多行日志合并
+loki.process "java_multiline" {
+  forward_to = [loki.write.loki_endpoint.receiver]
+  
+  // 多行日志合并规则 - 适用于Java异常堆栈跟踪
+  stage.multiline {
+    firstline     = "^\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}"
+    max_wait_time = "3s"
+    max_lines     = 1000
+  }
+  
+  // 解析日志级别和时间戳
+  stage.regex {
+    expression = "^(?P<timestamp>\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\s+(?P<level>\\w+)\\s+(?P<logger>\\[.*?\\])\\s+(?P<message>.*)"
+  }
+  
+  // 设置时间戳
+  stage.timestamp {
+    source = "timestamp"
+    format = "2006-01-02 15:04:05.000"
+  }
+  
+  // 添加标签
+  stage.labels {
+    values = {
+      level = "level",
+    }
+  }
+  
+  // 过滤空行和无用日志
+  stage.match {
+    selector = "{job=\"java-microservices\"}"
+    stage.drop {
+      expression = "^\\s*$"
+    }
+  }
+  
+  // 为ERROR级别的日志添加特殊标签
+  stage.match {
+    selector = "{level=\"ERROR\"}"
+    stage.labels {
+      values = {
+        severity = "error",
+      }
+    }
+  }
+  
+  // 为WARN级别的日志添加特殊标签
+  stage.match {
+    selector = "{level=\"WARN\"}"
+    stage.labels {
+      values = {
+        severity = "warning",
+      }
+    }
+  }
+}
+
+// 发送日志到Loki
+loki.write "loki_endpoint" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+    
+    // 可选：配置认证
+    // basic_auth {
+    //   username = "your-username"
+    //   password = "your-password"
+    // }
+    
+    // 可选：配置租户ID
+    // tenant_id = "your-tenant-id"
+  }
+  
+  // 批量发送配置
+  max_streams = 1000
+  batch_size = 1048576  // 1MB
+  batch_wait = "1s"
+}
+
+// 可选：配置日志轮转文件的监控
+discovery.file "java_microservices_rotated" {
+  path_targets = [{
+    __path__ = "/app/*/log/*.log.*",
+  }]
+}
+
+discovery.relabel "add_microservice_label_rotated" {
+  targets = discovery.file.java_microservices_rotated.targets
+  
+  rule {
+    source_labels = ["__path__"]
+    target_label  = "microservice"
+    regex         = "/app/([^/]+)/log/.*"
+    replacement   = "$1"
+  }
+  
+  rule {
+    source_labels = ["__path__"]
+    target_label  = "log_file"
+    regex         = "/app/[^/]+/log/(.+)$"
+    replacement   = "$1"
+  }
+  
+  rule {
+    source_labels = ["__path__"]
+    target_label  = "job"
+    replacement   = "java-microservices-rotated"
+  }
+}
+
+// 处理轮转日志文件
+loki.source.file "java_logs_rotated" {
+  targets    = discovery.relabel.add_microservice_label_rotated.output
+  forward_to = [loki.process.java_multiline.receiver]
+}
+
+// 监控配置 - 可选
+prometheus.exporter.self "alloy_metrics" {}
+
+prometheus.scrape "alloy_metrics" {
+  targets    = prometheus.exporter.self.alloy_metrics.targets
+  forward_to = [prometheus.remote_write.metrics.receiver]
+}
+
+// 如果需要发送metrics到Prometheus
+prometheus.remote_write "metrics" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+    
+    // 可选：配置认证
+    // basic_auth {
+    //   username = "your-username"
+    //   password = "your-password"
+    // }
+  }
+}
+
+
+
+// 定义日志文件发现组件，匹配 /app 目录下的日志文件
+local.file_match "log_files" {
+  path_targets = [
+    {"__path__" = "/app/*/log/*.log"}, // 匹配 /app/服务名/log/服务名.log
+  ]
+  sync_period = "5s" // 每 5 秒检查新文件
+}
+
+// 文件日志采集组件
+loki.source.file "log_scrape" {
+  targets    = local.file_match.log_files.targets
+  forward_to = [loki.process.process_logs.receiver]
+  tail_from_end = true // 从文件末尾开始读取
+}
+
+// 日志处理管道，包含多行日志合并
+loki.process "process_logs" {
+  // 阶段 1: 多行日志合并
+  stage.multiline {
+    firstline     = "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}" // 匹配以时间戳开头的行
+    max_wait_time = "3s" // 最大等待时间，超时后发送当前块
+    max_lines     = 1000 // 每个块最大行数
+  }
+
+  // 阶段 2: 提取日志元数据（可选，基于需要添加标签）
+  stage.regex {
+    expression = "^(?P<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})\\s*(?P<level>\\w+)\\s*(?P<message>(?s:.*))" // 提取时间戳、日志级别和消息
+  }
+
+  // 阶段 3: 添加自定义标签（从文件名提取服务名）
+  stage.labels {
+    values = {
+      service = "__path__" // 从路径提取服务名
+    }
+  }
+
+  // 阶段 4: 格式化输出日志
+  stage.output {
+    source = "message" // 使用提取的消息作为日志内容
+  }
+
+  forward_to = [loki.write.loki_push.receiver]
+}
+
+// 发送日志到 Loki
+loki.write "loki_push" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push" // 替换为您的 Loki 推送端点
+  }
+  external_labels = {
+    env = "production" // 可选：添加环境标签
+  }
+}
+
+
