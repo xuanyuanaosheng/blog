@@ -1,3 +1,4 @@
+'''
 server "http" {
   listen_address = "0.0.0.0:12345"
 }
