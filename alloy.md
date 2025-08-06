@@ -1,4 +1,5 @@
 '''
+
 server "http" {
   listen_address = "0.0.0.0:12345"
 }
@@ -38,3 +39,5 @@ local.file_match "parse_java_logs" {
     }
   ]
 }
+
+'''
