@@ -1,0 +1,31 @@
+```
+---
+- name: Gather system information from hosts
+  hosts: all
+  gather_facts: yes
+  become: yes
+
+  tasks:
+
+    - name: Get system uptime
+      command: uptime -s
+      register: uptime_output
+
+    - name: Get total disk size
+      shell: |
+        df -h --total | grep total | awk '{print $2}'
+      register: disk_size_output
+
+    - name: Show collected system information
+      debug:
+        msg: |
+          Hostname: {{ ansible_hostname }}
+          OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          Uptime since: {{ uptime_output.stdout }}
+          CPU:
+            Architecture: {{ ansible_architecture }}
+            Cores: {{ ansible_processor_cores }}
+            CPUs: {{ ansible_processor_count }}
+            Model: {{ ansible_processor[1] }}
+          Memory: {{ ansible_memtotal_mb }} MB
+          Total Disk Size: {{ disk_size_output.stdout }}
